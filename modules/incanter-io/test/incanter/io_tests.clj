@@ -57,11 +57,20 @@
                            (str incanter-home "data/olsexamp.dat")
                            :delim \space
                            :header true)))
+;; read-write-read roundtrip to test write functionality, using cars data
+(def test-roundtrip-data
+  (let [ids (read-dataset (str incanter-home "data/cars.csv")
+                      :header true)
+        fpath (.getAbsolutePath (java.io.File/createTempFile "tmpcars" "csv"))]
+      (do (save ids fpath)
+          (read-dataset fpath :header true))))
 
 ;; convert the space-delimited dataset into a matrix
 (def test-mat (to-matrix test-data))
 ;; convert the csv dataset into a matrix
 (def test-csv-mat (to-matrix test-csv-data)) 
+;; convert the roundtrip csv data into a matrix
+(def test-rtrip-csv-mat (to-matrix test-roundtrip-data)) 
 ;; convert the tab-delimited dataset into a matrix
 (def test-tdd-mat (to-matrix test-tdd-data))
 ;; convert the iris-data into a matrix, encoding strings into multiple dummy variables
@@ -73,6 +82,7 @@
   ;; validate matrices read from files
   (is (= (reduce plus test-mat) (matrix [770 2149] 2)))
   (is (= (reduce plus test-csv-mat) (matrix [770 2149] 2)))
+  (is (= (reduce plus test-rtrip-csv-mat) (matrix [770 2149] 2)))
   (is (= (reduce plus test-tdd-mat) (matrix [770 2149] 2)))
   ;; confirm that iris species factor was converted to two dummy variables
   (is (= (first iris-mat) (matrix [5.10 3.50 1.40 0.20 0] 5)))
@@ -82,6 +92,7 @@
   (doseq [[name cars-dataset]
 	  [["dat" test-data]
 	   ["csv" test-csv-data]
+	   ["rtripcsv" test-rtrip-csv-data]
 	   ["tdd" test-tdd-data]]]
     (is (= [:speed :dist] (:column-names cars-dataset)) (str "Reading column names for " name " failed"))
     (is (= 50 (count (:rows cars-dataset))) (str "Reading rows for " name " failed")))) ;; end of read-dataset-validation tests
